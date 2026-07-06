@@ -1,2 +1,5 @@
 [phases.setup]
-nixPkgs = ["ffmpeg", "libopus"]
+nixPkgs = ["ffmpeg", "libopus", "pkg-config"]
+
+[variables]
+LD_LIBRARY_PATH = "/usr/lib:/usr/local/lib"
