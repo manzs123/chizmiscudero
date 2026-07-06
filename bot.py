@@ -11,6 +11,7 @@ load_dotenv()
 
 def _load_opus():
     if discord.opus.is_loaded():
+        print("[Opus] Already loaded by py-cord")
         return
     candidates = [
         "libopus.so.0",

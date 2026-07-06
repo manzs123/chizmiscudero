@@ -46,6 +46,9 @@ class RecordingCog(commands.Cog):
             except Exception:
                 pass
 
+        if not discord.opus.is_loaded():
+            return await ctx.send("Voice is unavailable: opus library not loaded. Check Railway logs.")
+
         try:
             channel = ctx.author.voice.channel
             vc = await channel.connect()
@@ -62,7 +65,11 @@ class RecordingCog(commands.Cog):
             )
         except Exception as exc:
             self.connections.pop(ctx.guild.id, None)
-            await ctx.send(f"Failed to join voice channel: `{exc}`")
+            try:
+                await ctx.guild.voice_client.disconnect(force=True)
+            except Exception:
+                pass
+            await ctx.send(f"Failed to start recording: `{exc}`")
 
     @commands.command(name="kansela")
     async def kansela(self, ctx: commands.Context):
