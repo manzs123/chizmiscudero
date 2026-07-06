@@ -46,30 +46,35 @@ class RecordingCog(commands.Cog):
             except Exception:
                 pass
 
-        if not discord.opus.is_loaded():
-            return await ctx.send("Voice is unavailable: opus library not loaded. Check Railway logs.")
+        await ctx.send(f"[1/4] Opus loaded: `{discord.opus.is_loaded()}`")
+
+        if ctx.guild.voice_client:
+            try:
+                await ctx.guild.voice_client.disconnect(force=True)
+                await ctx.send("[2/4] Cleared stale voice client.")
+            except Exception as e:
+                await ctx.send(f"[2/4] Stale disconnect warning: `{e}`")
+        else:
+            await ctx.send("[2/4] No stale voice client.")
 
         try:
             channel = ctx.author.voice.channel
+            await ctx.send(f"[3/4] Connecting to **{channel.name}**...")
             vc = await channel.connect()
+            await ctx.send(f"[3/4] Connected. is_connected=`{vc.is_connected()}`")
+
             self.connections[ctx.guild.id] = vc
 
-            vc.start_recording(
-                discord.sinks.WaveSink(),
-                self._on_recording_done,
-                ctx,
-            )
-
-            await ctx.send(
-                f"Recording started in **{channel.name}**. Use `c!stap na` when the meeting is over."
-            )
+            await ctx.send("[4/4] Starting recording...")
+            vc.start_recording(discord.sinks.WaveSink(), self._on_recording_done, ctx)
+            await ctx.send("Recording started! Use `c!stap na` when the meeting is over.")
         except Exception as exc:
             self.connections.pop(ctx.guild.id, None)
             try:
                 await ctx.guild.voice_client.disconnect(force=True)
             except Exception:
                 pass
-            await ctx.send(f"Failed to start recording: `{exc}`")
+            await ctx.send(f"Failed: `{type(exc).__name__}: {exc}`")
 
     @commands.command(name="kansela")
     async def kansela(self, ctx: commands.Context):
