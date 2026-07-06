@@ -39,6 +39,21 @@ class RecordingCog(commands.Cog):
             f"Recording started in **{channel.name}**. Use `c!stap na` when the meeting is over."
         )
 
+    @commands.command(name="kansela")
+    async def kansela(self, ctx: commands.Context):
+        vc = self.connections.pop(ctx.guild.id, None)
+        if vc is None:
+            return await ctx.send("No active recording to cancel.")
+        try:
+            vc.stop_recording()
+        except Exception:
+            pass
+        try:
+            await vc.disconnect()
+        except Exception:
+            pass
+        await ctx.send("Recording cancelled and bot disconnected.")
+
     @commands.group(name="stap", invoke_without_command=True)
     async def stap(self, ctx: commands.Context):
         await ctx.send("Use `c!stap na` to stop recording and generate a summary.")
