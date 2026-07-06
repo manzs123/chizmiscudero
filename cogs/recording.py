@@ -64,16 +64,15 @@ class RecordingCog(commands.Cog):
             return await ctx.send("No active recording in this server.")
 
         vc = self.connections.pop(ctx.guild.id)
-        vc.stop_recording()  # triggers _on_recording_done
-        await ctx.send("Recording stopped. Generating summary — check the summary channel shortly.")
+        vc.stop_recording()  # collects audio and schedules _on_recording_done
+        await vc.disconnect()  # leave VC immediately
+        await ctx.send("Stopped! Generating summary — check the summary channel shortly.")
 
     async def _on_recording_done(
         self,
         sink: discord.sinks.WaveSink,
         ctx: commands.Context,
     ):
-        await sink.vc.disconnect()
-
         summary_channel = self.bot.get_channel(SUMMARY_CHANNEL_ID)
         if not summary_channel:
             print(f"[RecordingCog] SUMMARY_CHANNEL_ID {SUMMARY_CHANNEL_ID} not found.")
