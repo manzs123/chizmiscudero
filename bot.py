@@ -1,4 +1,5 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -6,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 intents = discord.Intents.default()
-intents.message_content = True  # required for prefix commands
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="c!", intents=intents)
 
@@ -16,7 +17,11 @@ async def on_ready():
     print(f"Bot ready: {bot.user} (ID: {bot.user.id})")
 
 
-bot.load_extension("cogs.recording")
+async def main():
+    async with bot:
+        await bot.load_extension("cogs.recording")
+        await bot.start(os.getenv("DISCORD_TOKEN"))
+
 
 if __name__ == "__main__":
-    bot.run(os.getenv("DISCORD_TOKEN"))
+    asyncio.run(main())
