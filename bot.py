@@ -19,7 +19,7 @@ async def on_ready():
 
 async def main():
     async with bot:
-        await bot.load_extension("cogs.recording")
+        bot.load_extension("cogs.recording")
         await bot.start(os.getenv("DISCORD_TOKEN"))
 
 

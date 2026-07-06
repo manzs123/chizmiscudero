@@ -1,12 +1,12 @@
 import os
 import asyncio
 import tempfile
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-_model = genai.GenerativeModel("gemini-1.5-flash")
-
-_MIN_AUDIO_BYTES = 1000  # skip near-empty recordings
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+_MODEL = "gemini-1.5-flash"
+_MIN_AUDIO_BYTES = 1000
 
 
 async def transcribe_audio(audio_bytes: bytes, username: str) -> str:
@@ -24,15 +24,21 @@ def _transcribe(audio_bytes: bytes, username: str) -> str:
             f.write(audio_bytes)
             tmp_path = f.name
 
-        uploaded = genai.upload_file(tmp_path, mime_type="audio/wav")
-        response = _model.generate_content([
-            uploaded,
-            (
-                f"Transcribe the speech in this audio. The speaker is '{username}' in a team meeting. "
-                "Output only the spoken words exactly as said. "
-                "If there is only silence or background noise, respond with exactly: [no speech]"
-            ),
-        ])
+        uploaded = _client.files.upload(
+            file=tmp_path,
+            config=types.UploadFileConfig(mime_type="audio/wav"),
+        )
+        response = _client.models.generate_content(
+            model=_MODEL,
+            contents=[
+                uploaded,
+                (
+                    f"Transcribe the speech in this audio. The speaker is '{username}' in a team meeting. "
+                    "Output only the spoken words exactly as said. "
+                    "If there is only silence or background noise, respond with exactly: [no speech]"
+                ),
+            ],
+        )
         text = response.text.strip()
         return "" if text == "[no speech]" else text
     except Exception as exc:
@@ -69,7 +75,7 @@ Write a concise, structured summary covering:
 
 Be brief, professional, and factual. If a section has nothing relevant, omit it."""
 
-        response = _model.generate_content(prompt)
+        response = _client.models.generate_content(model=_MODEL, contents=prompt)
         return response.text.strip()
     except Exception as exc:
         print(f"[Gemini] Summarization error: {exc}")
