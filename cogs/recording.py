@@ -39,19 +39,30 @@ class RecordingCog(commands.Cog):
                 "A recording is already in progress. Use `c!kansela` to reset it."
             )
 
-        channel = ctx.author.voice.channel
-        vc = await channel.connect()
-        self.connections[ctx.guild.id] = vc
+        # Kick out any leftover voice client from a broken previous session
+        if ctx.guild.voice_client:
+            try:
+                await ctx.guild.voice_client.disconnect(force=True)
+            except Exception:
+                pass
 
-        vc.start_recording(
-            discord.sinks.WaveSink(),
-            self._on_recording_done,
-            ctx,
-        )
+        try:
+            channel = ctx.author.voice.channel
+            vc = await channel.connect()
+            self.connections[ctx.guild.id] = vc
 
-        await ctx.send(
-            f"Recording started in **{channel.name}**. Use `c!stap na` when the meeting is over."
-        )
+            vc.start_recording(
+                discord.sinks.WaveSink(),
+                self._on_recording_done,
+                ctx,
+            )
+
+            await ctx.send(
+                f"Recording started in **{channel.name}**. Use `c!stap na` when the meeting is over."
+            )
+        except Exception as exc:
+            self.connections.pop(ctx.guild.id, None)
+            await ctx.send(f"Failed to join voice channel: `{exc}`")
 
     @commands.command(name="kansela")
     async def kansela(self, ctx: commands.Context):
