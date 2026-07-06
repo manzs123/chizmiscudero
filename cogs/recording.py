@@ -1,4 +1,5 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from services.gemini import transcribe_audio, summarize_transcript
@@ -60,12 +61,19 @@ class RecordingCog(commands.Cog):
         try:
             channel = ctx.author.voice.channel
             await ctx.send(f"[3/4] Connecting to **{channel.name}**...")
-            vc = await channel.connect(timeout=30.0, reconnect=False)
-            await ctx.send(f"[3/4] Connected. is_connected=`{vc.is_connected()}`")
+            vc = await channel.connect(timeout=60.0, reconnect=True)
+
+            # Wait up to 15 s for the voice connection to fully establish
+            for _ in range(75):
+                if vc.is_connected():
+                    break
+                await asyncio.sleep(0.2)
+
+            await ctx.send(f"[3/4] is_connected=`{vc.is_connected()}`")
 
             if not vc.is_connected():
                 await vc.disconnect(force=True)
-                await ctx.send("Voice connected but is_connected=False. Railway may be blocking Discord UDP voice traffic. Try rejoining the VC and running the command again.")
+                await ctx.send("Voice connection failed after 15 s. This is likely a network/UDP issue with Railway.")
                 return
 
             self.connections[ctx.guild.id] = vc
