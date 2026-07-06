@@ -12,7 +12,14 @@ load_dotenv()
 def _load_opus():
     if discord.opus.is_loaded():
         return
-    for lib in ["libopus.so.0", "libopus.so", "opus", "libopus"]:
+    candidates = [
+        "libopus.so.0",
+        "/usr/lib/x86_64-linux-gnu/libopus.so.0",
+        "/usr/lib/aarch64-linux-gnu/libopus.so.0",
+        "libopus.so",
+        "opus",
+    ]
+    for lib in candidates:
         try:
             discord.opus.load_opus(lib)
             print(f"[Opus] Loaded: {lib}")
